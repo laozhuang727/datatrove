@@ -10,31 +10,52 @@ Local, remote and other file systems are supported through [fsspec](https://file
 
 <!-- toc -->
 
-- [Installation](#installation)
-- [Quickstart examples](#quickstart-examples)
-- [Terminology](#terminology)
-- [Pipeline](#pipeline)
-  * [DataTrove Document](#datatrove-document)
-  * [Types of pipeline blocks](#types-of-pipeline-blocks)
-  * [Full pipeline](#full-pipeline)
-- [Executors](#executors)
-  * [LocalPipelineExecutor](#localpipelineexecutor)
-  * [SlurmPipelineExecutor](#slurmpipelineexecutor)
-- [Logging](#logging)
-- [DataFolder / paths](#datafolder--paths)
-- [Practical guides](#practical-guides)
-  * [Reading data](#reading-data)
-  * [Extracting text](#extracting-text)
-  * [Filtering data](#filtering-data)
-  * [Saving data](#saving-data)
-  * [Deduplicating data](#deduplicating-data)
-  * [Summary Statistics](#summary-statistics)
-  * [Custom blocks](#custom-blocks)
-    + [Simple data](#simple-data)
-    + [Custom function](#custom-function)
-    + [Custom block](#custom-block)
-- [Contributing](#contributing)
-- [Citation](#citation)
+- [DataTrove](#datatrove)
+  - [Table of contents](#table-of-contents)
+  - [Installation](#installation)
+  - [Quickstart examples](#quickstart-examples)
+  - [Terminology](#terminology)
+    - [Example](#example)
+  - [Pipeline](#pipeline)
+    - [DataTrove Document](#datatrove-document)
+    - [Types of pipeline blocks](#types-of-pipeline-blocks)
+    - [Full pipeline](#full-pipeline)
+  - [Executors](#executors)
+    - [LocalPipelineExecutor](#localpipelineexecutor)
+    - [SlurmPipelineExecutor](#slurmpipelineexecutor)
+  - [Logging](#logging)
+    - [Colorization](#colorization)
+  - [DataFolder / paths](#datafolder--paths)
+  - [Practical guides](#practical-guides)
+    - [Reading data](#reading-data)
+    - [Extracting text](#extracting-text)
+    - [Filtering data](#filtering-data)
+    - [Saving data](#saving-data)
+    - [Deduplicating data](#deduplicating-data)
+    - [Summary Statistics](#summary-statistics)
+    - [Custom blocks](#custom-blocks)
+      - [Simple data](#simple-data)
+      - [Custom function](#custom-function)
+      - [Custom block](#custom-block)
+  - [Contributing](#contributing)
+  - [Citation](#citation)
+- [Hugging Face 数据集下载与可视化工具](#hugging-face-数据集下载与可视化工具)
+  - [功能](#功能)
+  - [安装依赖](#安装依赖)
+  - [缓存配置](#缓存配置)
+  - [使用方法](#使用方法)
+    - [基本用法](#基本用法)
+    - [参数说明](#参数说明)
+    - [示例](#示例)
+      - [下载不同的数据集](#下载不同的数据集)
+      - [仅下载数据集不进行可视化](#仅下载数据集不进行可视化)
+      - [流式处理大型数据集](#流式处理大型数据集)
+      - [指定缓存目录](#指定缓存目录)
+  - [输出结果](#输出结果)
+  - [针对中文数据集的优化](#针对中文数据集的优化)
+  - [注意事项](#注意事项)
+  - [针对中文数据集的优化](#针对中文数据集的优化-1)
+  - [注意事项](#注意事项-1)
 
 <!-- tocstop -->
 
@@ -483,3 +504,114 @@ pytest -sv ./tests/
   url = {https://github.com/huggingface/datatrove}
 }
 ```
+
+# Hugging Face 数据集下载与可视化工具
+
+这个工具用于下载和可视化 Hugging Face 上的数据集，特别是针对 `opencsg/chinese-fineweb-edu-v2` 数据集进行了优化。
+
+## 功能
+
+- 下载指定的 Hugging Face 数据集
+- 分析数据集基本结构
+- 分析文本长度分布
+- 分析词频统计
+- 展示随机样本
+- 生成可视化图表与统计信息
+
+## 安装依赖
+
+```bash
+pip install datasets pandas matplotlib seaborn tqdm numpy jieba
+```
+
+## 缓存配置
+
+本工具默认将 Hugging Face 缓存设置为 `D:\huggingface_cache`，具体包括：
+
+- `HF_HOME`: `D:\huggingface_cache`
+- `HUGGINGFACE_HUB_CACHE`: `D:\huggingface_cache\hub`
+- `TRANSFORMERS_CACHE`: `D:\huggingface_cache\transformers`
+- `HF_DATASETS_CACHE`: `D:\huggingface_cache\datasets`
+
+您可以通过以下方式修改缓存位置：
+
+1. 在脚本中直接修改环境变量设置
+2. 使用 `--cache_dir` 参数指定临时缓存位置
+
+## 使用方法
+
+### 基本用法
+
+```bash
+python download_hf_dataset.py
+```
+
+这将使用默认参数下载 `opencsg/chinese-fineweb-edu-v2` 数据集并进行可视化分析。
+
+### 参数说明
+
+```bash
+python download_hf_dataset.py --help
+```
+
+主要参数:
+
+- `--dataset`: 要下载的数据集名称 (默认: "opencsg/chinese-fineweb-edu-v2")
+- `--split`: 要下载的数据集分割 (默认: "train")
+- `--streaming`: 是否流式加载数据集 (适用于大型数据集)
+- `--sample_size`: 要分析的样本数量 (默认: 1000)
+- `--save_dir`: 保存可视化结果的目录 (默认: "dataset_visualization")
+- `--text_column`: 数据集中文本列的名称 (默认: "text")
+- `--cache_dir`: 缓存数据集的目录 (默认使用环境变量设置的路径)
+- `--download_only`: 仅下载数据集，不进行可视化
+
+### 示例
+
+#### 下载不同的数据集
+
+```bash
+python download_hf_dataset.py --dataset "other-dataset-name" --split "validation"
+```
+
+#### 仅下载数据集不进行可视化
+
+```bash
+python download_hf_dataset.py --download_only
+```
+
+#### 流式处理大型数据集
+
+```bash
+python download_hf_dataset.py --streaming --sample_size 500
+```
+
+#### 指定缓存目录
+
+```bash
+python download_hf_dataset.py --cache_dir "./hf_cache"
+```
+
+## 输出结果
+
+脚本会在指定的保存目录 (默认为 `dataset_visualization`) 中生成以下文件:
+
+- `text_length_distribution.png`: 文本长度分布直方图
+- `text_length_stats.txt`: 文本长度统计信息
+- `word_frequency.png`: 词频柱状图
+- `word_frequency.txt`: 词频统计信息
+- `dataset_schema.txt`: 数据集结构信息
+
+## 针对中文数据集的优化
+
+这个脚本特别为中文数据集做了优化:
+
+- 使用 jieba 分词进行词频统计
+- 配置了中文字体显示
+- 过滤单字词以减少噪声
+
+## 注意事项
+
+- 对于大型数据集，建议使用 `--streaming` 参数
+- 首次下载数据集可能需要较长时间
+- 确保有足够的磁盘空间用于数据集缓存
+- 默认缓存路径为 `D:\huggingface_cache`，请确保该路径有足够的存储空间
